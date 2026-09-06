@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DuoQueue — Find your Duo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700&family=Bebas+Neue&family=UnifrakturCook:wght@700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#08070A;
+    --panel:#100E13;
+    --panel-2:#18141C;
+    --hairline:#2E2530;
+    --crimson:#FF1F45;
+    --crimson-dim:#8C0F27;
+    --acid:#C6FF3D;
+    --violet:#B24BFF;
+    --pink:#FF6FC7;
+    --plum:#3A0A2E;
+    --white:#F2EEF0;
+    --text-sec:#9A8F9C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--void);
+    color:var(--white);
+    font-family:'Manrope',sans-serif;
+    line-height:1.6;
+    overflow-x:hidden;
+    position:relative;
+  }
+  body::before{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.08;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode:overlay;
+  }
+  body::after{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:998;
+    background:radial-gradient(ellipse 80% 60% at 50% 0%, transparent 40%, rgba(0,0,0,.55) 100%);
+  }
+  .display{font-family:'Cinzel Decorative',serif;text-transform:uppercase;letter-spacing:.01em;font-weight:700;}
+  .gothic{font-family:'UnifrakturCook',cursive;font-weight:700;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:inherit;text-decoration:none;}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 32px;}
+
+  /* MARQUEE */
+  .marquee{
+    background:var(--crimson);
+    overflow:hidden;white-space:nowrap;position:relative;z-index:2;
+    clip-path:polygon(0 6px,2% 0,4% 6px,6% 0,8% 6px,10% 0,12% 6px,14% 0,16% 6px,18% 0,20% 6px,22% 0,24% 6px,26% 0,28% 6px,30% 0,32% 6px,34% 0,36% 6px,38% 0,40% 6px,42% 0,44% 6px,46% 0,48% 6px,50% 0,52% 6px,54% 0,56% 6px,58% 0,60% 6px,62% 0,64% 6px,66% 0,68% 6px,70% 0,72% 6px,74% 0,76% 6px,78% 0,80% 6px,82% 0,84% 6px,86% 0,88% 6px,90% 0,92% 6px,94% 0,96% 6px,98% 0,100% 6px,100% calc(100% - 6px),98% 100%,96% calc(100% - 6px),94% 100%,92% calc(100% - 6px),90% 100%,88% calc(100% - 6px),86% 100%,84% calc(100% - 6px),82% 100%,80% calc(100% - 6px),78% 100%,76% calc(100% - 6px),74% 100%,72% calc(100% - 6px),70% 100%,68% calc(100% - 6px),66% 100%,64% calc(100% - 6px),62% 100%,60% calc(100% - 6px),58% 100%,56% calc(100% - 6px),54% 100%,52% calc(100% - 6px),50% 100%,48% calc(100% - 6px),46% 100%,44% calc(100% - 6px),42% 100%,40% calc(100% - 6px),38% 100%,36% calc(100% - 6px),34% 100%,32% calc(100% - 6px),30% 100%,28% calc(100% - 6px),26% 100%,24% calc(100% - 6px),22% 100%,20% calc(100% - 6px),18% 100%,16% calc(100% - 6px),14% 100%,12% calc(100% - 6px),10% 100%,8% calc(100% - 6px),6% 100%,4% calc(100% - 6px),2% 100%,0 calc(100% - 6px));
+  }
+  .marquee-track{display:inline-flex;animation:scroll-left 22s linear infinite;}
+  .marquee-track span{
+    display:inline-block;padding:10px 28px;font-family:'JetBrains Mono',monospace;
+    font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#0A0004;
+  }
+  @keyframes scroll-left{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+
+  /* SCATTER DECOR */
+  .scatter{position:absolute;pointer-events:none;opacity:.5;z-index:0;}
+
+  /* ORNAMENT */
+  .ornament-corner{position:absolute;width:38px;height:38px;pointer-events:none;opacity:.85;z-index:2;}
+  .divider{display:flex;align-items:center;gap:16px;margin:0 0 56px;}
+  .divider .line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--hairline) 20%,var(--hairline) 80%,transparent);}
+  .divider svg{width:20px;height:20px;flex-shrink:0;color:var(--crimson-dim);}
+
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:50;
+    background:rgba(8,7,10,.9);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--hairline);
+    box-shadow:0 1px 0 0 rgba(0,0,0,0), inset 0 -2px 0 -1px transparent;
+  }
+  nav::after{
+    content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px;
+    background:linear-gradient(90deg,var(--crimson),var(--violet),var(--pink),var(--acid),var(--violet),var(--crimson));
+    opacity:.6;
+  }
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:72px;}
+  .logo{display:flex;align-items:center;gap:10px;font-family:'UnifrakturCook',cursive;font-weight:700;font-size:26px;letter-spacing:.02em;color:var(--white);}
+  .logo .rune{width:26px;height:26px;flex-shrink:0;}
+  nav .links{display:flex;gap:36px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-sec);}
+  nav .links a{position:relative;}
+  nav .links a::after{content:'';position:absolute;left:0;bottom:-4px;width:0;height:2px;background:var(--crimson);transition:width .18s;}
+  nav .links a:hover{color:var(--white);}
+  nav .links a:hover::after{width:100%;}
+  .btn-cta{
+    background:var(--crimson);
+    color:#0A0006;font-weight:800;font-size:12px;letter-spacing:.06em;
+    padding:12px 22px;text-transform:uppercase;
+    border:none;
+    box-shadow:0 0 0 1px rgba(255,31,69,.4), 0 0 24px -4px rgba(255,31,69,.6);
+  }
+  .btn-cta:hover{background:#FF3F5F;}
+
+  .hero{
+    position:relative;min-height:100vh;display:flex;align-items:center;
+    padding-top:72px;
+    background:
+      linear-gradient(180deg, rgba(178,75,255,.10), transparent 40%),
+      radial-gradient(ellipse 900px 600px at 85% 15%, rgba(255,31,69,.14), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 5% 90%, rgba(178,75,255,.12), transparent 60%),
+      radial-gradient(ellipse 1200px 800px at 50% 100%, var(--plum), transparent 70%),
+      var(--void);
+    border-bottom:1px solid var(--hairline);
+    overflow:hidden;
+  }
+  .hero::after{
+    content:'';position:absolute;left:0;right:0;top:0;height:100%;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0px, transparent 1px, transparent 3px);
+    pointer-events:none;
+  }
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:60px;align-items:center;position:relative;z-index:1;}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;
+    color:var(--acid);border:1px solid rgba(198,255,61,.4);background:rgba(198,255,61,.06);
+    padding:6px 12px;margin-bottom:24px;
+    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+  }
+  .eyebrow .dot{width:6px;height:6px;background:var(--acid);animation:pulse 1.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.15;}}
+  .hero h1{
+    font-family:'Cinzel Decorative',serif;text-transform:uppercase;font-weight:900;
+    font-size:clamp(36px,5.4vw,58px);line-height:1.08;
+    margin-bottom:24px;
+  }
+  .hero h1 .accent{
+    color:var(--crimson);
+    text-shadow:0 0 30px rgba(255,31,69,.5), 3px 3px 0 var(--violet), -2px 0 0 var(--pink);
+    animation:glitch 4s infinite;
+    display:inline-block;
+  }
+  @keyframes glitch{
+    0%,92%,100%{text-shadow:0 0 30px rgba(255,31,69,.5), 3px 3px 0 var(--violet), -2px 0 0 var(--pink);transform:translate(0,0);}
+    93%{text-shadow:-3px 0 0 var(--pink), 3px 0 0 var(--acid);transform:translate(-1px,1px);}
+    95%{text-shadow:3px 0 0 var(--violet), -3px 0 0 var(--crimson);transform:translate(1px,-1px);}
+    97%{text-shadow:0 0 30px rgba(255,31,69,.5), 3px 3px 0 var(--violet), -2px 0 0 var(--pink);transform:translate(0,0);}
+  }
+  .hero p.lead{font-size:17px;color:var(--text-sec);max-width:460px;margin-bottom:34px;}
+  .hero-actions{display:flex;gap:14px;align-items:center;}
+  .btn-ghost{
+    border:1px solid var(--hairline);padding:14px 22px;font-weight:700;font-size:13px;
+    text-transform:uppercase;letter-spacing:.05em;
+    color:var(--white);
+  }
+  .btn-ghost:hover{border-color:var(--crimson);color:var(--crimson);}
+  .btn-cta.lg{padding:15px 28px;font-size:13px;}
+  .hero-stats{display:flex;gap:0;margin-top:48px;border-top:1px solid var(--hairline);}
+  .hero-stats div{border-right:1px solid var(--hairline);padding:18px 24px 0 0;margin-right:24px;}
+  .hero-stats div:last-child{border-right:none;}
+  .hero-stats .n{font-family:'Cinzel',serif;font-weight:700;font-size:26px;color:var(--crimson);}
+  .hero-stats .l{font-size:11px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.08em;font-weight:700;}
+
+  .sticker-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px;}
+  .sticker{
+    font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;letter-spacing:.04em;
+    padding:7px 13px;border:1px solid var(--hairline);text-transform:uppercase;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .sticker.s-pink{color:var(--pink);border-color:rgba(255,111,199,.4);background:rgba(255,111,199,.06);}
+  .sticker.s-violet{color:var(--violet);border-color:rgba(178,75,255,.4);background:rgba(178,75,255,.06);}
+  .sticker.s-acid{color:var(--acid);border-color:rgba(198,255,61,.4);background:rgba(198,255,61,.06);}
+
+  .queue-card{
+    background:var(--panel);border:1px solid var(--hairline);
+    padding:24px;position:relative;
+    box-shadow:0 40px 80px -20px rgba(0,0,0,.8), 0 0 60px -20px rgba(255,31,69,.25);
+    clip-path:polygon(0% 5%,50% 0%,100% 5%,100% calc(100% - 20px),calc(100% - 20px) 100%,0 100%);
+  }
+  .queue-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,var(--crimson),var(--violet));
+  }
+  .queue-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+  .queue-head .title{font-family:'Cinzel',serif;font-weight:700;font-size:16px;letter-spacing:.06em;text-transform:uppercase;color:var(--white);}
+  .queue-timer{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--acid);font-weight:700;}
+  .role-row{display:flex;gap:6px;margin-bottom:20px;}
+  .role-chip{
+    flex:1;text-align:center;padding:10px 4px;border:1px solid var(--hairline);
+    font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--text-sec);cursor:pointer;
+  }
+  .role-chip.active{border-color:var(--crimson);color:var(--crimson);background:rgba(255,31,69,.08);}
+  .match-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+  .match-row{
+    display:flex;align-items:center;gap:12px;background:var(--panel-2);
+    border:1px solid var(--hairline);border-left:2px solid var(--crimson-dim);padding:10px 12px;
+  }
+  .avatar{
+    width:38px;height:38px;flex-shrink:0;
+    background:linear-gradient(135deg,var(--crimson),#5A0A1A);
+    display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-weight:700;font-size:13px;color:#0A0004;
+    clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
+  }
+  .avatar.violet{background:linear-gradient(135deg,var(--violet),#3D0A5C);color:#0A0010;}
+  .avatar.acid{background:linear-gradient(135deg,var(--acid),#5C7A0A);color:#0A1000;}
+  .avatar.pink{background:linear-gradient(135deg,var(--pink),#7A0A4A);color:#1A0010;}
+  .match-meta{flex:1;}
+  .match-meta .name{font-size:13px;font-weight:700;}
+  .match-meta .sub{font-size:11px;color:var(--text-sec);font-family:'JetBrains Mono',monospace;}
+  .compat{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--crimson);font-weight:800;}
+  .btn-confirm{
+    display:block;width:100%;text-align:center;background:var(--crimson);
+    color:#0A0006;font-weight:800;font-size:13px;letter-spacing:.05em;text-transform:uppercase;
+    padding:14px;border:none;
+    clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+    box-shadow:0 0 24px -6px rgba(255,31,69,.7);
+  }
+
+  section{padding:120px 0;position:relative;}
+  .section-tag{
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
+    color:var(--crimson);margin-bottom:16px;
+  }
+  h2.display{font-size:clamp(30px,3.8vw,44px);margin-bottom:18px;max-width:680px;line-height:1;}
+  .section-lead{color:var(--text-sec);max-width:560px;font-size:16px;margin-bottom:60px;}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--hairline);border:1px solid var(--hairline);}
+  .step{background:var(--void);padding:40px 32px;position:relative;overflow:hidden;}
+  .step::before{content:'';position:absolute;top:0;left:0;width:0;height:2px;background:var(--crimson);transition:width .25s;}
+  .step:hover::before{width:100%;}
+  .step .num{font-family:'Cinzel Decorative',serif;font-weight:700;font-size:38px;color:var(--crimson-dim);margin-bottom:20px;}
+  .step h3{font-family:'Cinzel',serif;font-weight:700;font-size:18px;letter-spacing:.03em;text-transform:uppercase;margin-bottom:12px;}
+  .step p{font-size:14px;color:var(--text-sec);}
+
+  .role-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;background:var(--hairline);border:1px solid var(--hairline);}
+  .role-card{background:var(--panel);padding:30px 14px 24px;text-align:center;transition:background .15s;clip-path:polygon(0% 10%,50% 0%,100% 10%,100% 100%,0% 100%);}
+  .role-card:hover{background:var(--panel-2);}
+  .role-card .icon{width:32px;height:32px;margin:0 auto 16px;color:var(--crimson);}
+  .role-card h4{font-family:'Cinzel',serif;font-weight:700;font-size:15px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px;}
+  .role-card p{font-size:12px;color:var(--text-sec);}
+
+  .lobby{background:var(--panel);border:1px solid var(--hairline);}
+  .lobby-bar{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--hairline);background:var(--panel-2);}
+  .lobby-bar span{width:9px;height:9px;background:var(--crimson-dim);}
+  .lobby-bar .title{margin-left:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-sec);}
+  .chat{padding:28px;display:flex;flex-direction:column;gap:20px;}
+  .msg{display:flex;gap:14px;max-width:520px;}
+  .msg .bubble{background:var(--panel-2);border:1px solid var(--hairline);border-left:2px solid var(--crimson-dim);padding:14px 16px;font-size:14px;}
+  .msg .who{font-size:12px;font-weight:800;color:var(--crimson);margin-bottom:6px;font-family:'JetBrains Mono',monospace;}
+  .msg.right{align-self:flex-end;flex-direction:row-reverse;}
+  .msg.right .bubble{background:rgba(178,75,255,.06);border-color:rgba(178,75,255,.3);border-left:2px solid var(--violet);}
+  .msg.right .who{color:var(--violet);}
+
+  .cta-strip{
+    background:linear-gradient(135deg, rgba(255,31,69,.10), rgba(178,75,255,.08), rgba(255,111,199,.06));
+    border:1px solid var(--hairline);padding:70px 60px;
+    display:flex;align-items:center;justify-content:space-between;gap:40px;
+    clip-path:polygon(28px 0,100% 0,100% calc(100% - 28px),calc(100% - 28px) 100%,0 100%,0 28px);
+  }
+  .cta-strip h2{font-size:clamp(26px,3vw,36px);margin-bottom:10px;}
+  .cta-strip p{color:var(--text-sec);font-size:15px;}
+
+  footer{border-top:1px solid var(--hairline);padding:40px 0;}
+  footer .wrap{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-sec);font-family:'JetBrains Mono',monospace;}
+
+  /* APP SHELL */
+  .app-shell{
+    background:var(--panel);border:1px solid var(--hairline);margin-top:8px;position:relative;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(178,75,255,.08) 1px, transparent 1px),
+      radial-gradient(circle at 9px 9px, rgba(255,111,199,.06) 1px, transparent 1px);
+    background-size:18px 18px;
+    background-color:var(--panel);
+  }
+  .app-tabs{display:flex;border-bottom:1px solid var(--hairline);overflow-x:auto;}
+  .tab-btn{
+    flex:1;min-width:120px;background:none;border:none;color:var(--text-sec);
+    font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:16px 10px;cursor:pointer;border-bottom:2px solid transparent;
+  }
+  .tab-btn.active{color:var(--crimson);border-bottom-color:var(--crimson);background:rgba(255,31,69,.05);}
+  .tab-btn:hover{color:var(--white);}
+  .tab-panel{padding:32px;}
+  .tab-panel[hidden]{display:none;}
+
+  .field{margin-bottom:18px;}
+  .field label{display:block;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-sec);margin-bottom:8px;}
+  .field input, .field select, .field textarea{
+    width:100%;background:var(--panel-2);border:1px solid var(--hairline);color:var(--white);
+    padding:12px 14px;font-family:'Manrope',sans-serif;font-size:14px;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{outline:none;border-color:var(--crimson);}
+  .field textarea{resize:vertical;min-height:70px;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .checkbox-row{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text-sec);margin-bottom:22px;}
+  .checkbox-row input{width:16px;height:16px;margin-top:3px;accent-color:var(--crimson);flex-shrink:0;}
+  .btn-primary{
+    background:var(--crimson);color:#0A0006;font-weight:800;font-size:13px;letter-spacing:.05em;text-transform:uppercase;
+    padding:13px 24px;border:none;cursor:pointer;
+    clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+  }
+  .btn-primary:hover{background:#FF3F5F;}
+  .btn-primary:disabled{background:var(--hairline);color:var(--text-sec);cursor:not-allowed;}
+  .form-msg{font-family:'JetBrains Mono',monospace;font-size:12px;margin-top:14px;}
+  .form-msg.ok{color:var(--acid);}
+  .form-msg.err{color:var(--crimson);}
+
+  .gate{padding:40px;text-align:center;color:var(--text-sec);font-size:14px;}
+  .gate a{color:var(--crimson);font-weight:700;cursor:pointer;}
+
+  .swipe-card{max-width:380px;margin:0 auto;background:var(--panel-2);border:1px solid var(--hairline);position:relative;clip-path:polygon(0% 4%,50% 0%,100% 4%,100% 100%,0% 100%);}
+  .swipe-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--crimson),var(--violet),var(--pink));z-index:1;}
+  .swipe-photo{
+    height:220px;display:flex;align-items:center;justify-content:center;
+    font-family:'Cinzel',serif;font-weight:700;font-size:48px;color:#0A0004;
+  }
+  .swipe-body{padding:20px;}
+  .swipe-body .name{font-family:'Cinzel',serif;font-weight:700;font-size:19px;letter-spacing:.02em;}
+  .swipe-body .meta{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--crimson);margin:4px 0 10px;}
+  .swipe-body .bio{font-size:13px;color:var(--text-sec);}
+  .swipe-actions{display:flex;gap:12px;margin-top:20px;}
+  .swipe-actions button{
+    flex:1;padding:14px;border:1px solid var(--hairline);background:var(--panel);color:var(--white);
+    font-family:'JetBrains Mono',monospace;font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  }
+  .btn-pass:hover{border-color:var(--text-sec);}
+  .btn-like{border-color:var(--crimson) !important;color:var(--crimson) !important;}
+  .btn-like:hover{background:rgba(255,31,69,.1);}
+  .discover-count{text-align:center;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-sec);margin-bottom:20px;}
+
+  .match-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;}
+  .match-tile{background:var(--panel-2);border:1px solid var(--hairline);padding:16px;text-align:center;cursor:pointer;}
+  .match-tile:hover{border-color:var(--crimson);}
+  .match-tile .av{width:54px;height:54px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-weight:700;font-size:16px;color:#0A0004;}
+  .match-tile .nm{font-size:13px;font-weight:700;}
+  .match-tile .rl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-sec);}
+
+  .chat-wrap{display:grid;grid-template-columns:220px 1fr;gap:0;border:1px solid var(--hairline);min-height:380px;}
+  .chat-list{border-right:1px solid var(--hairline);}
+  .chat-list-item{padding:14px 16px;border-bottom:1px solid var(--hairline);cursor:pointer;font-size:13px;}
+  .chat-list-item.active{background:rgba(255,31,69,.08);color:var(--crimson);}
+  .chat-list-item:hover{background:var(--panel-2);}
+  .chat-main{display:flex;flex-direction:column;}
+  .chat-messages{flex:1;padding:20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;max-height:340px;}
+  .chat-bubble{max-width:70%;padding:10px 14px;font-size:13px;border:1px solid var(--hairline);background:var(--panel-2);}
+  .chat-bubble.me{align-self:flex-end;background:rgba(255,31,69,.08);border-color:rgba(255,31,69,.3);}
+  .chat-bubble.them{align-self:flex-start;}
+  .chat-input-row{display:flex;border-top:1px solid var(--hairline);}
+  .chat-input-row input{flex:1;background:var(--panel-2);border:none;color:var(--white);padding:14px;font-size:13px;}
+  .chat-input-row input:focus{outline:none;}
+  .chat-input-row button{background:var(--crimson);color:#0A0006;border:none;padding:0 22px;font-weight:800;font-size:12px;text-transform:uppercase;cursor:pointer;}
+
+  .proto-note{
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-sec);
+    border:1px dashed var(--hairline);padding:14px 18px;margin-top:24px;
+  }
+
+  @media(max-width:640px){
+    .chat-wrap{grid-template-columns:1fr;}
+    .chat-list{display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid var(--hairline);}
+    .field-row{grid-template-columns:1fr;}
+  }
+
+  @media(max-width:860px){
+    .hero-grid{grid-template-columns:1fr;}
+    .steps{grid-template-columns:1fr;}
+    .role-grid{grid-template-columns:repeat(2,1fr);}
+    nav .links{display:none;}
+    .cta-strip{flex-direction:column;align-items:flex-start;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="logo">
+      <svg class="rune" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="#FF1F45" stroke-width="1.6"/><path d="M12 2 V22 M3 7 L21 17 M21 7 L3 17" stroke="#B24BFF" stroke-width="1" opacity="0.7"/></svg>
+      DuoQueue
+    </div>
+    <div class="links">
+      <a href="#funktion">How it works</a>
+      <a href="#rollen">Roles</a>
+      <a href="#stimmen">Voices</a>
+    </div>
+    <a href="#app" class="btn-cta">Join the queue</a>
+  </div>
+</nav>
+
+<div class="marquee">
+  <div class="marquee-track">
+    <span>⛓ GOTH GF ENERGY ⛓ ALT BF MATERIAL ⛓ EGIRL CORE ⛓ CRYBABY ON COMMS ⛓ BLACKOUT EYELINER, ONE-TRICK YASUO ⛓</span>
+    <span>⛓ GOTH GF ENERGY ⛓ ALT BF MATERIAL ⛓ EGIRL CORE ⛓ CRYBABY ON COMMS ⛓ BLACKOUT EYELINER, ONE-TRICK YASUO ⛓</span>
+  </div>
+</div>
+
+<section class="hero">
+  <svg class="scatter" style="top:110px;right:6%;width:34px;" viewBox="0 0 24 24" fill="none" stroke="#FF6FC7" stroke-width="1.4"><path d="M12 4v16M6 8h12M8 12h8"/></svg>
+  <svg class="scatter" style="bottom:90px;left:4%;width:28px;" viewBox="0 0 24 24" fill="none" stroke="#B24BFF" stroke-width="1.4"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/></svg>
+  <svg class="scatter" style="top:220px;left:9%;width:22px;opacity:.35;" viewBox="0 0 24 24" fill="none" stroke="#FF1F45" stroke-width="1.4"><circle cx="12" cy="12" r="7"/><path d="M12 5a7 7 0 000 14 7 7 0 010-14z" fill="#FF1F45" opacity=".5"/></svg>
+  <svg class="scatter" style="top:160px;right:22%;width:26px;opacity:.4;" viewBox="0 0 24 24" fill="#F2EEF0"><path d="M12 8c-2-3-6-5-10-4 1 2 3 3 5 4-2 1-4 3-5 5 4 1 8-1 10-4 2 3 6 5 10 4-1-2-3-4-5-5 2-1 4-2 5-4-4-1-8 1-10 4z"/></svg>
+  <svg class="scatter" style="top:60px;left:32%;width:60px;opacity:.15;" viewBox="0 0 60 60" fill="none" stroke="#B24BFF" stroke-width="0.8"><path d="M30 2v56M2 30h56M8 8l44 44M52 8L8 52M30 2C18 10 10 18 2 30M30 2C42 10 50 18 58 30M30 58C18 50 10 42 2 30M30 58C42 50 50 42 58 30" /><circle cx="30" cy="30" r="10" /><circle cx="30" cy="30" r="18" /></svg>
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> 14,302 degenerates online</div>
+      <div class="gothic" style="font-size:26px;color:var(--pink);margin-bottom:-6px;opacity:.85;">find your player two</div>
+      <h1>Losing ranked<br>was never this <span class="accent">romantic.</span></h1>
+      <p class="lead">DuoQueue matches you by role, rank, and server — not by an algorithm that's never seen a Nexus explosion. Blackout eyeliner, alt playlists, and a temper in ARAM all welcome. Find someone who can handle your ping spam.</p>
+      <div class="hero-actions">
+        <a href="#app" class="btn-cta lg">Match for free</a>
+        <a href="#funktion" class="btn-ghost">How it works</a>
+      </div>
+      <div class="hero-stats">
+        <div><div class="n">92%</div><div class="l">Postgame reply rate</div></div>
+        <div><div class="n">3.1k</div><div class="l">Duos this season</div></div>
+        <div><div class="n">All</div><div class="l">Servers &amp; roles</div></div>
+      </div>
+      <div class="sticker-row">
+        <span class="sticker s-pink">✧ alt-friendly</span>
+        <span class="sticker s-violet">⛓ goth approved</span>
+        <span class="sticker s-acid">✂ no normies filter</span>
+      </div>
+    </div>
+
+    <div class="queue-card">
+      <svg class="ornament-corner" style="top:-6px;left:-6px;" viewBox="0 0 40 40" fill="none" stroke="#FF1F45" stroke-width="1.2"><path d="M2 20c4-10 12-16 20-16M2 20c2 6 8 10 14 10M2 20c8 0 14-4 18-10"/><circle cx="22" cy="4" r="2.5" fill="#FF1F45"/></svg>
+      <svg class="ornament-corner" style="bottom:-6px;right:-6px;transform:rotate(180deg);" viewBox="0 0 40 40" fill="none" stroke="#B24BFF" stroke-width="1.2"><path d="M2 20c4-10 12-16 20-16M2 20c2 6 8 10 14 10M2 20c8 0 14-4 18-10"/><circle cx="22" cy="4" r="2.5" fill="#B24BFF"/></svg>
+      <div class="queue-head">
+        <div class="title">Duo search</div>
+        <div class="queue-timer" id="timer">00:00</div>
+      </div>
+      <div class="role-row">
+        <div class="role-chip active">TOP</div>
+        <div class="role-chip">JGL</div>
+        <div class="role-chip active">MID</div>
+        <div class="role-chip">ADC</div>
+        <div class="role-chip">SUP</div>
+      </div>
+      <div class="match-list">
+        <div class="match-row">
+          <div class="avatar">LN</div>
+          <div class="match-meta"><div class="name">Lira · Mid, Diamond IV</div><div class="sub">NA · 24 · looking for a trio main</div></div>
+          <div class="compat">94%</div>
+        </div>
+        <div class="match-row">
+          <div class="avatar violet">KV</div>
+          <div class="match-meta"><div class="name">Kai · Support, Platinum I</div><div class="sub">NA · 27 · Nautilus one-trick</div></div>
+          <div class="compat">88%</div>
+        </div>
+        <div class="match-row">
+          <div class="avatar acid">SM</div>
+          <div class="match-meta"><div class="name">Sam · Jungle, Gold II</div><div class="sub">EUW · 22 · ganks the wrong lane anyway</div></div>
+          <div class="compat">81%</div>
+        </div>
+      </div>
+      <a href="#app" class="btn-confirm">Confirm match</a>
+    </div>
+  </div>
+</section>
+
+<section id="funktion">
+  <div class="wrap">
+    <div class="divider"><div class="line"></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 2v20M4 8c0-3 3-5 8-5s8 2 8 5-3 5-8 5-8-2-8-5z"/></svg><div class="line"></div></div>
+    <div class="section-tag">♱ The Flow</div>
+    <h2 class="display">Three steps to your first Baron together.</h2>
+    <p class="section-lead">No endless swiping. DuoQueue works like champion select — fast, brutal, backed by real data instead of gut feeling.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="num">01</div>
+        <h3>Set up your profile</h3>
+        <p>Add your main role, rank, server, and play times. Stay honest about your rank — we verify it through a Riot account link.</p>
+      </div>
+      <div class="step">
+        <div class="num">02</div>
+        <h3>Filter role &amp; vibe</h3>
+        <p>Filter by position, communication style, and ranked seriousness — from "normals only" to "challenger grind."</p>
+      </div>
+      <div class="step">
+        <div class="num">03</div>
+        <h3>Match &amp; queue up</h3>
+        <p>Mutual interest opens the chat. First date: a game together. Second date: outside of Summoner's Rift.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="rollen" style="position:relative;overflow:hidden;">
+  <svg style="position:absolute;top:-120px;right:-120px;width:420px;height:420px;opacity:.06;pointer-events:none;" viewBox="0 0 200 200" fill="none" stroke="#FF6FC7" stroke-width="1">
+    <circle cx="100" cy="100" r="90"/><circle cx="100" cy="100" r="65"/><circle cx="100" cy="100" r="20"/>
+    <g>
+      <path d="M100 10v180M10 100h180M27 27l146 146M173 27L27 173"/>
+      <path d="M100 10a90 90 0 010 180M100 10a90 90 0 000 180" opacity=".5"/>
+    </g>
+  </svg>
+  <div class="wrap" style="position:relative;z-index:1;">
+    <div class="divider"><div class="line"></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 2v20M4 8c0-3 3-5 8-5s8 2 8 5-3 5-8 5-8-2-8-5z"/></svg><div class="line"></div></div>
+    <div class="section-tag">♱ Preferences</div>
+    <h2 class="display">Tell us your role. We'll tell you who fits.</h2>
+    <p class="section-lead">Matching runs on role compatibility, not just photos — because "top main looking for a jungler who actually ganks" matters more than a star sign.</p>
+    <div class="role-grid">
+      <div class="role-card">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--crimson)" stroke-width="1.6"><rect x="4" y="4" width="16" height="16"/><path d="M8 4v16M16 4v16"/></svg>
+        <h4>Top</h4>
+        <p>Split push &amp; island vibes</p>
+      </div>
+      <div class="role-card">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="1.6"><path d="M12 3l3 6 6 1-4.5 4.5 1 6L12 17l-5.5 3.5 1-6L3 10l6-1z"/></svg>
+        <h4>Jungle</h4>
+        <p>Shows up late, decides everything</p>
+      </div>
+      <div class="role-card">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/></svg>
+        <h4>Mid</h4>
+        <p>Roams, flames lovingly</p>
+      </div>
+      <div class="role-card">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--acid)" stroke-width="1.6"><path d="M4 20l7-16 7 16M8 14h6"/></svg>
+        <h4>ADC</h4>
+        <p>Needs peel, gives loyalty</p>
+      </div>
+      <div class="role-card">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--crimson)" stroke-width="1.6"><path d="M12 21s-7-4.5-7-10a5 5 0 0110-1 5 5 0 0110 1c0 5.5-7 10-7 10z"/></svg>
+        <h4>Support</h4>
+        <p>Already warding your heart</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="stimmen">
+  <div class="wrap">
+    <div class="divider"><div class="line"></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 2v20M4 8c0-3 3-5 8-5s8 2 8 5-3 5-8 5-8-2-8-5z"/></svg><div class="line"></div></div>
+    <div class="section-tag">♱ Postgame Lobby</div>
+    <h2 class="display">What became of shared pings.</h2>
+    <p class="section-lead">Real messages — names anonymized like summoner names, for privacy.</p>
+    <div class="lobby">
+      <div class="lobby-bar"><span></span><span></span><span></span><div class="title">post_game_lobby.log</div></div>
+      <div class="chat">
+        <div class="msg">
+          <div class="bubble"><div class="who">FeliciaFlash</div>Thanks for the peel in game 2. Coffee tomorrow, same lane-partner chemistry?</div>
+        </div>
+        <div class="msg right">
+          <div class="bubble"><div class="who">JannikJungle</div>Only if you're as clutch as that Baron steal again. I'm in.</div>
+        </div>
+        <div class="msg">
+          <div class="bubble"><div class="who">NoraNashor</div>6 months later: first apartment together, still separate ranks.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="app">
+  <div class="wrap">
+    <div class="divider"><div class="line"></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 2v20M4 8c0-3 3-5 8-5s8 2 8 5-3 5-8 5-8-2-8-5z"/></svg><div class="line"></div></div>
+    <div class="section-tag">♱ The Actual App</div>
+    <h2 class="display">Not just a mood board. It works.</h2>
+    <p class="section-lead">Make a profile, browse a few duos by candlelight, and message the ones you match with — right here, no page reload.</p>
+
+    <div class="app-shell">
+      <svg viewBox="0 0 400 40" style="width:100%;height:24px;display:block;" preserveAspectRatio="none">
+        <path d="M0 40 L0 20 Q0 4 20 4 L180 4 Q200 -6 220 4 L380 4 Q400 4 400 20 L400 40 Z" fill="#100E13" stroke="#2E2530" stroke-width="1"/>
+      </svg>
+      <div class="app-tabs">
+        <button class="tab-btn active" data-tab="account">1. Account</button>
+        <button class="tab-btn" data-tab="discover">2. Discover</button>
+        <button class="tab-btn" data-tab="matches">3. Matches</button>
+        <button class="tab-btn" data-tab="messages">4. Messages</button>
+      </div>
+
+      <!-- ACCOUNT -->
+      <div class="tab-panel" id="tab-account">
+        <div class="field">
+          <label>Display name</label>
+          <input type="text" id="acc-name" placeholder="e.g. NoraNashor" maxlength="24">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Main role</label>
+            <select id="acc-role">
+              <option>Top</option><option>Jungle</option><option selected>Mid</option><option>ADC</option><option>Support</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Rank</label>
+            <select id="acc-rank">
+              <option>Iron</option><option>Bronze</option><option>Silver</option><option>Gold</option>
+              <option selected>Platinum</option><option>Diamond</option><option>Master+</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Server</label>
+            <select id="acc-server">
+              <option>NA</option><option>EUW</option><option>EUNE</option><option>OCE</option><option>KR</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Age</label>
+            <input type="number" id="acc-age" min="18" max="99" placeholder="18+">
+          </div>
+        </div>
+        <div class="field">
+          <label>Short bio</label>
+          <textarea id="acc-bio" maxlength="160" placeholder="One-trick, blackout eyeliner, flames warmly."></textarea>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="acc-adult">
+          <label for="acc-adult">I confirm I'm 18 or older. This is a demo running in your browser — no real accounts are shared with other people.</label>
+        </div>
+        <button class="btn-primary" id="acc-save">Create profile</button>
+        <div class="form-msg" id="acc-msg"></div>
+      </div>
+
+      <!-- DISCOVER -->
+      <div class="tab-panel" id="tab-discover" hidden>
+        <div class="gate" id="discover-gate">Create a profile first to start discovering duos.</div>
+        <div id="discover-content" hidden>
+          <div class="discover-count" id="discover-count"></div>
+          <div class="swipe-card" id="swipe-card"></div>
+        </div>
+      </div>
+
+      <!-- MATCHES -->
+      <div class="tab-panel" id="tab-matches" hidden>
+        <div class="gate" id="matches-gate">Create a profile first to see your matches.</div>
+        <div id="matches-content" hidden>
+          <div class="match-grid" id="match-grid"></div>
+        </div>
+      </div>
+
+      <!-- MESSAGES -->
+      <div class="tab-panel" id="tab-messages" hidden>
+        <div class="gate" id="messages-gate">Match with someone first to unlock messages.</div>
+        <div id="messages-content" hidden>
+          <div class="chat-wrap">
+            <div class="chat-list" id="chat-list"></div>
+            <div class="chat-main">
+              <div class="chat-messages" id="chat-messages"></div>
+              <div class="chat-input-row">
+                <input type="text" id="chat-input" placeholder="Type a message…">
+                <button id="chat-send">Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="proto-note">⚠ Prototype note: this profile, your matches, and your messages are saved only in your own browser session — nobody else can see or match with them. A live version with real, shared matchmaking needs a backend server and database. I can help plan or build that next if you want to take this further.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>DuoQueue — unofficial, fan-made, not a Riot Games product.</div>
+    <div>© 2026 DuoQueue</div>
+  </div>
+</footer>
+
+<script>
+  let seconds = 0;
+  const timerEl = document.getElementById('timer');
+  setInterval(() => {
+    seconds++;
+    const m = String(Math.floor(seconds/60)).padStart(2,'0');
+    const s = String(seconds%60).padStart(2,'0');
+    timerEl.textContent = m+':'+s;
+  }, 1000);
+
+  document.querySelectorAll('.role-chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('active'));
+  });
+
+  /* ---------- storage abstraction (works with or without window.storage) ---------- */
+  const memStore = {};
+  async function storeGet(key){
+    if (window.storage){
+      try { return await window.storage.get(key); } catch(e){ return null; }
+    }
+    return memStore[key] !== undefined ? {key, value: memStore[key]} : null;
+  }
+  async function storeSet(key, value){
+    if (window.storage){
+      try { return await window.storage.set(key, value); } catch(e){ return null; }
+    }
+    memStore[key] = value;
+    return {key, value};
+  }
+
+  /* ---------- mock candidate pool ---------- */
+  const POOL = [
+    {id:'p1', name:'Lira', role:'Mid', rank:'Diamond', server:'NA', bio:'One-trick Zed, playlist is 90% Deftones.', cls:''},
+    {id:'p2', name:'Kai', role:'Support', rank:'Platinum', server:'NA', bio:'Nautilus one-trick, warding your heart since turn 1.', cls:'violet'},
+    {id:'p3', name:'Sam', role:'Jungle', rank:'Gold', server:'EUW', bio:'Ganks the wrong lane but shows up for the vibes.', cls:'acid'},
+    {id:'p4', name:'Vesper', role:'ADC', rank:'Master+', server:'EUNE', bio:'Grinds challenger, cries during cutscenes.', cls:'pink'},
+    {id:'p5', name:'Rook', role:'Top', rank:'Silver', server:'OCE', bio:'Split-pushes, wears black, means well.', cls:''},
+    {id:'p6', name:'Noa', role:'Mid', rank:'Diamond', server:'EUW', bio:'Roams for kills, stays for the aftergame chat.', cls:'violet'},
+    {id:'p7', name:'Dez', role:'Support', rank:'Gold', server:'NA', bio:'Enchanter main, alt playlist, soft-spoken until pentakill.', cls:'acid'},
+    {id:'p8', name:'Mika', role:'Jungle', rank:'Platinum', server:'KR', bio:'Invades level 2. No regrets.', cls:'pink'},
+  ];
+  const REPLIES = [
+    "haha same, what's your main again?",
+    "down for a normals later tonight?",
+    "okay that's actually so real",
+    "we should duo before you flame me for it",
+    "sending you my discord, don't be weird about it"
+  ];
+
+  let profile = null;
+  let seenIds = [];
+  let matchIds = [];
+  let activeChat = null;
+
+  /* ---------- tabs ---------- */
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+  function switchTab(tab){
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.tab-panel').forEach(p => p.hidden = p.id !== 'tab-' + tab);
+    if (tab === 'discover') renderDiscover();
+    if (tab === 'matches') renderMatches();
+    if (tab === 'messages') renderMessages();
+  }
+
+  /* ---------- account ---------- */
+  const accMsg = document.getElementById('acc-msg');
+  document.getElementById('acc-save').addEventListener('click', async () => {
+    const name = document.getElementById('acc-name').value.trim();
+    const role = document.getElementById('acc-role').value;
+    const rank = document.getElementById('acc-rank').value;
+    const server = document.getElementById('acc-server').value;
+    const age = parseInt(document.getElementById('acc-age').value, 10);
+    const bio = document.getElementById('acc-bio').value.trim();
+    const adult = document.getElementById('acc-adult').checked;
+
+    if (!name || !age || !bio){
+      accMsg.textContent = 'Fill in your name, age, and bio first.';
+      accMsg.className = 'form-msg err';
+      return;
+    }
+    if (!adult || age < 18){
+      accMsg.textContent = 'You must confirm you are 18 or older to create a profile.';
+      accMsg.className = 'form-msg err';
+      return;
+    }
+    profile = {name, role, rank, server, age, bio};
+    await storeSet('profile', JSON.stringify(profile));
+    accMsg.textContent = 'Profile saved. Head to Discover →';
+    accMsg.className = 'form-msg ok';
+  });
+
+  async function loadProfile(){
+    const res = await storeGet('profile');
+    if (res && res.value){
+      profile = JSON.parse(res.value);
+      document.getElementById('acc-name').value = profile.name || '';
+      document.getElementById('acc-role').value = profile.role || 'Mid';
+      document.getElementById('acc-rank').value = profile.rank || 'Platinum';
+      document.getElementById('acc-server').value = profile.server || 'NA';
+      document.getElementById('acc-age').value = profile.age || '';
+      document.getElementById('acc-bio').value = profile.bio || '';
+      document.getElementById('acc-adult').checked = true;
+    }
+    const seenRes = await storeGet('seen-ids');
+    seenIds = seenRes && seenRes.value ? JSON.parse(seenRes.value) : [];
+    const matchRes = await storeGet('match-ids');
+    matchIds = matchRes && matchRes.value ? JSON.parse(matchRes.value) : [];
+  }
+
+  /* ---------- discover ---------- */
+  function renderDiscover(){
+    const gate = document.getElementById('discover-gate');
+    const content = document.getElementById('discover-content');
+    if (!profile){ gate.hidden = false; content.hidden = true; return; }
+    gate.hidden = true; content.hidden = false;
+
+    const next = POOL.find(p => !seenIds.includes(p.id));
+    const countEl = document.getElementById('discover-count');
+    const card = document.getElementById('swipe-card');
+
+    if (!next){
+      countEl.textContent = "That's everyone for now.";
+      card.innerHTML = '<div class="swipe-body" style="text-align:center;padding:30px 20px;">Check back later for new duos.</div>';
+      return;
+    }
+    countEl.textContent = `${POOL.length - seenIds.length} duos left to see`;
+    card.innerHTML = `
+      <div class="swipe-photo avatar ${next.cls}" style="height:220px;width:100%;">${next.name.slice(0,2).toUpperCase()}</div>
+      <div class="swipe-body">
+        <div class="name">${next.name}</div>
+        <div class="meta">${next.role} · ${next.rank} · ${next.server}</div>
+        <div class="bio">${next.bio}</div>
+        <div class="swipe-actions">
+          <button class="btn-pass" id="btn-pass">Pass</button>
+          <button class="btn-like" id="btn-like">Like</button>
+        </div>
+      </div>`;
+    document.getElementById('btn-pass').addEventListener('click', () => decide(next.id, false));
+    document.getElementById('btn-like').addEventListener('click', () => decide(next.id, true));
+  }
+
+  async function decide(id, liked){
+    seenIds.push(id);
+    await storeSet('seen-ids', JSON.stringify(seenIds));
+    if (liked && !matchIds.includes(id)){
+      matchIds.push(id);
+      await storeSet('match-ids', JSON.stringify(matchIds));
+    }
+    renderDiscover();
+  }
+
+  /* ---------- matches ---------- */
+  function renderMatches(){
+    const gate = document.getElementById('matches-gate');
+    const content = document.getElementById('matches-content');
+    if (!profile){ gate.hidden = false; content.hidden = true; return; }
+    gate.hidden = true; content.hidden = false;
+
+    const grid = document.getElementById('match-grid');
+    if (matchIds.length === 0){
+      grid.innerHTML = '<div class="gate">No matches yet — go Like a few duos in Discover.</div>';
+      return;
+    }
+    grid.innerHTML = matchIds.map(id => {
+      const p = POOL.find(x => x.id === id);
+      return `<div class="match-tile" data-id="${id}">
+        <div class="av avatar ${p.cls}" style="margin:0 auto 10px;">${p.name.slice(0,2).toUpperCase()}</div>
+        <div class="nm">${p.name}</div>
+        <div class="rl">${p.role} · ${p.rank}</div>
+      </div>`;
+    }).join('');
+    grid.querySelectorAll('.match-tile').forEach(tile => {
+      tile.addEventListener('click', () => {
+        activeChat = tile.dataset.id;
+        switchTab('messages');
+      });
+    });
+  }
+
+  /* ---------- messages ---------- */
+  async function renderMessages(){
+    const gate = document.getElementById('messages-gate');
+    const content = document.getElementById('messages-content');
+    if (!profile || matchIds.length === 0){ gate.hidden = false; content.hidden = true; return; }
+    gate.hidden = true; content.hidden = false;
+
+    if (!activeChat) activeChat = matchIds[0];
+
+    const list = document.getElementById('chat-list');
+    list.innerHTML = matchIds.map(id => {
+      const p = POOL.find(x => x.id === id);
+      return `<div class="chat-list-item ${id === activeChat ? 'active' : ''}" data-id="${id}">${p.name}</div>`;
+    }).join('');
+    list.querySelectorAll('.chat-list-item').forEach(item => {
+      item.addEventListener('click', () => { activeChat = item.dataset.id; renderMessages(); });
+    });
+
+    await renderChatThread();
+  }
+
+  async function renderChatThread(){
+    const msgsEl = document.getElementById('chat-messages');
+    const res = await storeGet('chat:' + activeChat);
+    const thread = res && res.value ? JSON.parse(res.value) : [];
+    msgsEl.innerHTML = thread.map(m =>
+      `<div class="chat-bubble ${m.from === 'me' ? 'me' : 'them'}">${m.text}</div>`
+    ).join('') || '<div style="color:var(--text-sec);font-size:13px;">Say hi first.</div>';
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  }
+
+  document.getElementById('chat-send').addEventListener('click', sendChat);
+  document.getElementById('chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+
+  async function sendChat(){
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || !activeChat) return;
+    input.value = '';
+    const res = await storeGet('chat:' + activeChat);
+    const thread = res && res.value ? JSON.parse(res.value) : [];
+    thread.push({from:'me', text});
+    await storeSet('chat:' + activeChat, JSON.stringify(thread));
+    await renderChatThread();
+
+    setTimeout(async () => {
+      const res2 = await storeGet('chat:' + activeChat);
+      const thread2 = res2 && res2.value ? JSON.parse(res2.value) : [];
+      thread2.push({from:'them', text: REPLIES[Math.floor(Math.random()*REPLIES.length)]});
+      await storeSet('chat:' + activeChat, JSON.stringify(thread2));
+      if (document.getElementById('tab-messages').hidden === false) renderChatThread();
+    }, 1100);
+  }
+
+  /* ---------- init ---------- */
+  loadProfile();
+</script>
+
+</body>
+</html>
